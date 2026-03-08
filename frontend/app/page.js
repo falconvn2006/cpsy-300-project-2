@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, } from "react";
 
 export default function Home() {
   const [search, setSearch] = useState("");
@@ -9,6 +9,85 @@ export default function Home() {
   const barRef = useRef(null);
   const scatterRef = useRef(null);
   const pieRef = useRef(null);
+
+  useEffect(() => {
+    // Fetch and render charts from backend API
+    async function fetchCharts() {
+      // Fetch bar chart data
+      try {
+        const barResponse = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/bar-chart-data");
+        const barData = await barResponse.text();
+        if (barRef.current) {
+          const ctx = barRef.current.getContext("2d");
+          const img = new Image();
+          img.onload = () => {
+            ctx.clearRect(0, 0, barRef.current.width, barRef.current.height);
+            ctx.drawImage(img, 0, 0, barRef.current.width, barRef.current.height);
+          }
+          img.src = `data:image/png;base64,${barData}`;
+        }
+      }
+      catch (error) {
+        console.error("Error fetching bar chart:", error);
+      }
+
+      // Fetch scatter plot data
+      try {
+        const scatterResponse = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/scatter-plot-data");
+        const scatterData = await scatterResponse.text();
+        if (scatterRef.current) {
+          const ctx = scatterRef.current.getContext("2d");
+          const img = new Image();
+          img.onload = () => {
+            ctx.clearRect(0, 0, scatterRef.current.width, scatterRef.current.height);
+            ctx.drawImage(img, 0, 0, scatterRef.current.width, scatterRef.current.height);
+          }
+          img.src = `data:image/png;base64,${scatterData}`;
+        }
+      }
+      catch (error) {
+        console.error("Error fetching scatter plot:", error);
+      }
+
+      // Fetch heatmap data
+      try {
+        const heatmapResponse = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/heatmap-data");
+        const heatmapData = await heatmapResponse.text();
+        const heatmapContainer = document.getElementById("heatmap");
+        if (heatmapContainer) {
+          const img = new Image();
+          img.onload = () => {
+            heatmapContainer.innerHTML = "";
+            heatmapContainer.appendChild(img);
+          }
+          img.src = `data:image/png;base64,${heatmapData}`;
+        }
+      }
+      catch (error) {
+        console.error("Error fetching heatmap:", error);
+      }
+
+      // Fetch pie chart data
+      try {
+        const pieResponse = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/pie-chart-data");
+        const pieData = await pieResponse.text();
+        if (pieRef.current) {
+          const ctx = pieRef.current.getContext("2d");
+          const img = new Image();
+          img.onload = () => {
+            ctx.clearRect(0, 0, pieRef.current.width, pieRef.current.height);
+            ctx.drawImage(img, 0, 0, pieRef.current.width, pieRef.current.height);
+          }
+          img.src = `data:image/png;base64,${pieData}`;
+        }
+      }
+      catch (error) {
+        console.error("Error fetching pie chart:", error);
+      }
+    }
+
+    fetchCharts();
+  }, []);
 
   function handleGetInsights() {
     console.log("Get Nutritional Insights", { search, diet });
