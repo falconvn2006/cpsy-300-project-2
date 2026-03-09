@@ -21,28 +21,23 @@ groupby_types = df.groupby('Diet_type', sort=False)
 
 # Calculate the average macronutrient content for each diet type
 avg_macros = groupby_types[nutrients].mean()
-# print(avg_macros)
 
 # Find the top 5 protein-rich recipes for each diet type
 df_sorted = df.sort_values(by=['Diet_type', 'Protein(g)'], ascending=[True, False], kind='mergesort')
 top_5_protein = df_sorted.groupby('Diet_type').head(5)
-# print(top_5_protein[['Diet_type', 'Recipe_name', 'Cuisine_type', 'Protein(g)']])
 
 # Find the diet type with the highest protein content across all recipes.
 highest_protein_diet = groupby_types['Protein(g)'].sum().idxmax()
-# print(f"Highest protein diet type: {highest_protein_diet}")
 
 # Identify the most common cuisines for each diet type.
 most_common_cuisine = (groupby_types['Cuisine_type'].agg(lambda x: x.value_counts().idxmax()))
-# print(most_common_cuisine)
 
 # Add new metrics (Protein-to-Carbs ratio and Carbs-to-Fat ratio)
 df['Protein_to_Carbs_ratio'] = df['Protein(g)'] / df['Carbs(g)']
 df['Carbs_to_Fat_ratio'] = df['Carbs(g)'] / df['Fat(g)']
 
 # ==========BAR CHART==========
-# # Create bar chart
-
+# Create bar chart of average macronutrient content by diet type
 def bar_chart_figure():
     fig = Figure(figsize=(10, 6))
     ax = fig.add_subplot(111)
@@ -93,6 +88,7 @@ def scatter_plot_figure():
     return data 
 
 # ==========HEATMAP==========
+# Heatmap of nutrient correlations
 def heatmap_figure():
     fig = Figure(figsize=(10, 6))
     ax = fig.add_subplot(111)
@@ -132,11 +128,31 @@ def pie_chart_figure():
     data = base64.b64encode(buf.getbuffer()).decode('ascii')
     return data
 
-# plt.title('Top 5 Protein-Rich Recipes: Distribution across Cuisines')
-# plt.xlabel('Cuisine Type')
-# plt.ylabel('Protein (g)')
-# plt.xticks(rotation=45)
-# plt.grid(axis='y', linestyle='--', alpha=0.5)
-# plt.legend(title='Diet Type', bbox_to_anchor=(1.05, 1), loc='upper left')
-# plt.tight_layout()
-# plt.show()
+# Get nutritional insights by diet type
+def get_nutritional_insights(diet_type):
+    insights = {}
+    if diet_type in avg_macros.index:
+        insights['average_protein'] = avg_macros.loc[diet_type, 'Protein(g)']
+        insights['average_carbs'] = avg_macros.loc[diet_type, 'Carbs(g)']
+        insights['average_fat'] = avg_macros.loc[diet_type, 'Fat(g)']
+        insights['protein_to_carbs_ratio'] = insights['average_protein'] / insights['average_carbs'] if insights['average_carbs'] > 0 else None
+        insights['carbs_to_fat_ratio'] = insights['average_carbs'] / insights['average_fat'] if insights['average_fat'] > 0 else None
+    else:
+        insights['error'] = 'Diet type not found'
+    
+    return insights
+
+# Get recipes by diet type
+def get_recipes(diet_type):
+    if diet_type in df['Diet_type'].unique():
+        recipes = df[df['Diet_type'] == diet_type][['Recipe_name', 'Cuisine_type', 'Protein(g)', 'Carbs(g)', 'Fat(g)']]
+        return recipes.to_dict(orient='records')
+    else:
+        return {'error': 'Diet type not found'}
+
+# Get clusters of recipes by diet type
+def get_clusters_by_diet(diet_type):
+    if diet_type in df['Diet_type'].unique():
+        return df[df['Diet_type'] == diet_type][nutrients].to_dict(orient='records')
+    else:
+        return {'error': 'Diet type not found'}

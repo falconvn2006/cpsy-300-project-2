@@ -4,7 +4,8 @@ import { useState, useRef, useEffect, } from "react";
 
 export default function Home() {
   const [search, setSearch] = useState("");
-  const [diet, setDiet] = useState("all");
+  const [diet, setDiet] = useState("All");
+  const [text, setText] = useState("");
 
   const barRef = useRef(null);
   const scatterRef = useRef(null);
@@ -90,18 +91,84 @@ export default function Home() {
   }, []);
 
   function handleGetInsights() {
-    console.log("Get Nutritional Insights", { search, diet });
-    alert("Get Nutritional Insights (placeholder)");
+    if(diet !== "All") {
+      fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/nutritional-insights?diet_type=" + diet)
+        .then(response => response.text())
+        .then(data => {
+          console.log("Nutritional Insights:", data);
+          setText(data);
+        })
+        .catch(error => {
+          console.error("Error fetching nutritional insights:", error);
+          alert("Error fetching nutritional insights (see console for details)");
+        });
+    }
+    else {
+      fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/nutritional-insights?diet_type=" + search)
+        .then(response => response.text())
+        .then(data => {
+          console.log("Nutritional Insights:", data);
+          setText(data);
+        })
+        .catch(error => {
+          console.error("Error fetching nutritional insights:", error);
+          alert("Error fetching nutritional insights (see console for details)");
+        });
+    }
   }
 
   function handleGetRecipes() {
-    console.log("Get Recipes", { search, diet });
-    alert("Get Recipes (placeholder)");
+    if(diet !== "All") {
+      fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/recipes?diet_type=" + diet)
+        .then(response => response.text())
+        .then(data => {
+          console.log("Recipes:", data);
+          setText(data);
+        })
+        .catch(error => {
+          console.error("Error fetching recipes:", error);
+          alert("Error fetching recipes (see console for details)");
+        });
+    }
+    else {
+      fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/recipes?diet_type=" + search)
+        .then(response => response.text())
+        .then(data => {
+          console.log("Recipes:", data);
+          setText(data);
+        })
+        .catch(error => {
+          console.error("Error fetching recipes:", error);
+          alert("Error fetching recipes (see console for details)");
+        });
+    }
   }
 
   function handleGetClusters() {
-    console.log("Get Clusters", { search, diet });
-    alert("Get Clusters (placeholder)");
+    if(diet !== "All") {
+      fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/clusters?diet_type=" + diet)
+        .then(response => response.text())
+        .then(data => {
+          console.log("Clusters:", data);
+          setText(data);
+        })
+        .catch(error => {
+          console.error("Error fetching clusters:", error);
+          alert("Error fetching clusters (see console for details)");
+        });
+    }
+    else {
+      fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/clusters?diet_type=" + search)
+        .then(response => response.text())
+        .then(data => {
+          console.log("Clusters:", data);
+          setText(data);
+        })
+        .catch(error => {
+          console.error("Error fetching clusters:", error);
+          alert("Error fetching clusters (see console for details)");
+        });
+    }
   }
 
   return (
@@ -163,7 +230,7 @@ export default function Home() {
               onChange={(e) => setDiet(e.target.value)}
               className="p-3 border border-gray-300 rounded-md w-full sm:w-auto focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="all">All Diet Types</option>
+              <option value="All">All Diet Types</option>
               <option value="vegan">Vegan</option>
               <option value="keto">Keto</option>
             </select>
@@ -177,6 +244,7 @@ export default function Home() {
             <button onClick={handleGetRecipes} className="bg-green-600 hover:bg-green-700 text-white py-2 px-5 rounded-lg font-medium transition-colors">Get Recipes</button>
             <button onClick={handleGetClusters} className="bg-purple-600 hover:bg-purple-700 text-white py-2 px-5 rounded-lg font-medium transition-colors">Get Clusters</button>
           </div>
+          {text}
         </section>
 
         <section>
