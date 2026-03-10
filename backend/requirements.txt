@@ -4,3 +4,4 @@ pandas
 matplotlib
 azure-storage-blob
 python-dotenv
+flask_cors
