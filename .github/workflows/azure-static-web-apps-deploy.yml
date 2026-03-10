@@ -27,4 +27,3 @@ jobs:
           app_location: "frontend"  # Where your Next.js code lives
           api_location: ""          # Leave empty as your backend is separate
           output_location: ".next"  # Next.js default build output
-          ###### End of Path Settings ######
