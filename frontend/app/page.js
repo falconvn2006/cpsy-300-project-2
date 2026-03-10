@@ -11,12 +11,14 @@ export default function Home() {
   const scatterRef = useRef(null);
   const pieRef = useRef(null);
 
+  const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+
   useEffect(() => {
     // Fetch and render charts from backend API
     async function fetchCharts() {
       // Fetch bar chart data
       try {
-        const barResponse = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/bar-chart-data");
+        const barResponse = await fetch(`${baseUrl}/bar-chart-data`);
         const barData = await barResponse.text();
         if (barRef.current) {
           const ctx = barRef.current.getContext("2d");
@@ -34,7 +36,7 @@ export default function Home() {
 
       // Fetch scatter plot data
       try {
-        const scatterResponse = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/scatter-plot-data");
+        const scatterResponse = await fetch(`${baseUrl}/scatter-plot-data`);
         const scatterData = await scatterResponse.text();
         if (scatterRef.current) {
           const ctx = scatterRef.current.getContext("2d");
@@ -52,7 +54,7 @@ export default function Home() {
 
       // Fetch heatmap data
       try {
-        const heatmapResponse = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/heatmap-data");
+        const heatmapResponse = await fetch(`${baseUrl}/heatmap-data`);
         const heatmapData = await heatmapResponse.text();
         const heatmapContainer = document.getElementById("heatmap");
         if (heatmapContainer) {
@@ -70,7 +72,7 @@ export default function Home() {
 
       // Fetch pie chart data
       try {
-        const pieResponse = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/pie-chart-data");
+        const pieResponse = await fetch(`${baseUrl}/pie-chart-data`);
         const pieData = await pieResponse.text();
         if (pieRef.current) {
           const ctx = pieRef.current.getContext("2d");
@@ -92,7 +94,7 @@ export default function Home() {
 
   function handleGetInsights() {
     if(diet !== "All") {
-      fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/nutritional-insights?diet_type=" + diet)
+      fetch(`${baseUrl}/nutritional-insights?diet_type=${diet}`)
         .then(response => response.text())
         .then(data => {
           console.log("Nutritional Insights:", data);
@@ -104,7 +106,7 @@ export default function Home() {
         });
     }
     else {
-      fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/nutritional-insights?diet_type=" + search)
+      fetch(`${baseUrl}/nutritional-insights?diet_type=${search}`)
         .then(response => response.text())
         .then(data => {
           console.log("Nutritional Insights:", data);
@@ -119,7 +121,7 @@ export default function Home() {
 
   function handleGetRecipes() {
     if(diet !== "All") {
-      fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/recipes?diet_type=" + diet)
+      fetch(`${baseUrl}/recipes?diet_type=${diet}`)
         .then(response => response.text())
         .then(data => {
           console.log("Recipes:", data);
@@ -131,7 +133,7 @@ export default function Home() {
         });
     }
     else {
-      fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/recipes?diet_type=" + search)
+      fetch(`${baseUrl}/recipes?diet_type=${search}`)
         .then(response => response.text())
         .then(data => {
           console.log("Recipes:", data);
@@ -146,7 +148,7 @@ export default function Home() {
 
   function handleGetClusters() {
     if(diet !== "All") {
-      fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/clusters?diet_type=" + diet)
+      fetch(`${baseUrl}/clusters?diet_type=${diet}`)
         .then(response => response.text())
         .then(data => {
           console.log("Clusters:", data);
@@ -158,7 +160,7 @@ export default function Home() {
         });
     }
     else {
-      fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/clusters?diet_type=" + search)
+      fetch(`${baseUrl}/clusters?diet_type=${search}`)
         .then(response => response.text())
         .then(data => {
           console.log("Clusters:", data);
