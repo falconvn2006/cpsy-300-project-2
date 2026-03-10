@@ -27,3 +27,5 @@ jobs:
           app_location: "frontend"  # Where your Next.js code lives
           api_location: ""          # Leave empty as your backend is separate
           output_location: ".next"  # Next.js default build output
+        env:
+          NEXT_PUBLIC_BACKEND_URL: https://nutrition-backend-server.jollymoss-3ced5ef6.eastasia.azurecontainerapps.io
