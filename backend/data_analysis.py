@@ -4,11 +4,27 @@ from matplotlib.figure import Figure
 from io import BytesIO
 import base64
 
+from azure.storage.blob import BlobServiceClient
+from dotenv import load_dotenv
+import os
+
+load_dotenv()  # Load environment variables from .env file
+
 # Create list of columns to load
 read_cols = ['Diet_type', 'Recipe_name', 'Cuisine_type', 'Protein(g)', 'Carbs(g)', 'Fat(g)']
 
+# Azure Blob Storage connection details
+CONNECTION_STRING = os.getenv('AZURE_STORAGE_CONNECTION_STRING')
+blob_service_client = BlobServiceClient.from_connection_string(CONNECTION_STRING, api_version="2023-11-03")
+container_name = 'datasets'
+blob_name='All_Diets.csv'
+container_client = blob_service_client.get_container_client(container_name)
+blob_client = container_client.get_blob_client(blob_name)
+
+stream = blob_client.download_blob().readall()
+
 # Load the dataset
-df = pd.read_csv('All_Diets.csv', usecols=read_cols)
+df = pd.read_csv(BytesIO(stream), usecols=read_cols)
 
 # Select macronutrient columns only
 nutrients = ['Protein(g)', 'Carbs(g)', 'Fat(g)']
