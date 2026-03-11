@@ -1,176 +1,80 @@
 "use client";
 
-import { useState, useRef, useEffect, } from "react";
+import { useState, useEffect } from "react";
 
 export default function Home() {
+  // Filters
   const [search, setSearch] = useState("");
   const [diet, setDiet] = useState("All");
-  const [text, setText] = useState("");
 
-  const barRef = useRef(null);
-  const scatterRef = useRef(null);
-  const pieRef = useRef(null);
+  // Data results
+  const [results, setResults] = useState([]);
+  const [insights, setInsights] = useState(null);
+  const [clusters, setClusters] = useState([]);
+
+  // Chart
+  const [barImage, setBarImage] = useState(null);
+  const [scatterImage, setScatterImage] = useState(null);
+  const [heatmapImage, setHeatmapImage] = useState(null);
+  const [pieImage, setPieImage] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
+  //  Fetch all charts data
   useEffect(() => {
-    // Fetch and render charts from backend API
-    async function fetchCharts() {
-      // Fetch bar chart data
+    async function fetchAllCharts() {
       try {
-        const barResponse = await fetch(`${baseUrl}/bar-chart-data`);
-        const barData = await barResponse.text();
-        if (barRef.current) {
-          const ctx = barRef.current.getContext("2d");
-          const img = new Image();
-          img.onload = () => {
-            ctx.clearRect(0, 0, barRef.current.width, barRef.current.height);
-            ctx.drawImage(img, 0, 0, barRef.current.width, barRef.current.height);
-          }
-          img.src = `data:image/png;base64,${barData}`;
-        }
-      }
-      catch (error) {
-        console.error("Error fetching bar chart:", error);
-      }
+        const [bar, scatter, heatmap, pie] = await Promise.all([
+          fetch(`${baseUrl}/bar-chart-data`).then(res => res.text()),
+          fetch(`${baseUrl}/scatter-plot-data`).then(res => res.text()),
+          fetch(`${baseUrl}/heatmap-data`).then(res => res.text()),
+          fetch(`${baseUrl}/pie-chart-data`).then(res => res.text()),
+        ]);
 
-      // Fetch scatter plot data
-      try {
-        const scatterResponse = await fetch(`${baseUrl}/scatter-plot-data`);
-        const scatterData = await scatterResponse.text();
-        if (scatterRef.current) {
-          const ctx = scatterRef.current.getContext("2d");
-          const img = new Image();
-          img.onload = () => {
-            ctx.clearRect(0, 0, scatterRef.current.width, scatterRef.current.height);
-            ctx.drawImage(img, 0, 0, scatterRef.current.width, scatterRef.current.height);
-          }
-          img.src = `data:image/png;base64,${scatterData}`;
-        }
-      }
-      catch (error) {
-        console.error("Error fetching scatter plot:", error);
-      }
-
-      // Fetch heatmap data
-      try {
-        const heatmapResponse = await fetch(`${baseUrl}/heatmap-data`);
-        const heatmapData = await heatmapResponse.text();
-        const heatmapContainer = document.getElementById("heatmap");
-        if (heatmapContainer) {
-          const img = new Image();
-          img.onload = () => {
-            heatmapContainer.innerHTML = "";
-            heatmapContainer.appendChild(img);
-          }
-          img.src = `data:image/png;base64,${heatmapData}`;
-        }
-      }
-      catch (error) {
-        console.error("Error fetching heatmap:", error);
-      }
-
-      // Fetch pie chart data
-      try {
-        const pieResponse = await fetch(`${baseUrl}/pie-chart-data`);
-        const pieData = await pieResponse.text();
-        if (pieRef.current) {
-          const ctx = pieRef.current.getContext("2d");
-          const img = new Image();
-          img.onload = () => {
-            ctx.clearRect(0, 0, pieRef.current.width, pieRef.current.height);
-            ctx.drawImage(img, 0, 0, pieRef.current.width, pieRef.current.height);
-          }
-          img.src = `data:image/png;base64,${pieData}`;
-        }
-      }
-      catch (error) {
-        console.error("Error fetching pie chart:", error);
+        setBarImage(bar);
+        setScatterImage(scatter);
+        setHeatmapImage(heatmap);
+        setPieImage(pie);
+      } catch (err) {
+        console.error("Charts failed to load:", err);
       }
     }
+    fetchAllCharts();
+  }, [baseUrl]);
 
-    fetchCharts();
-  }, []);
+  const getQuery = () => (diet !== "All" ? diet : search);
 
-  function handleGetInsights() {
-    if(diet !== "All") {
-      fetch(`${baseUrl}/nutritional-insights?diet_type=${diet}`)
-        .then(response => response.text())
-        .then(data => {
-          console.log("Nutritional Insights:", data);
-          setText(data);
-        })
-        .catch(error => {
-          console.error("Error fetching nutritional insights:", error);
-          alert("Error fetching nutritional insights (see console for details)");
-        });
-    }
-    else {
-      fetch(`${baseUrl}/nutritional-insights?diet_type=${search}`)
-        .then(response => response.text())
-        .then(data => {
-          console.log("Nutritional Insights:", data);
-          setText(data);
-        })
-        .catch(error => {
-          console.error("Error fetching nutritional insights:", error);
-          alert("Error fetching nutritional insights (see console for details)");
-        });
-    }
+  // Get recipes, insights, or clusters based on user interaction
+  async function handleGetRecipes() {
+    setLoading(true);
+    const res = await fetch(`${baseUrl}/recipes?diet_type=${getQuery()}`);
+    const data = await res.json();
+    setResults(data);
+    setInsights(null);
+    setClusters([]);
+    setCurrentPage(1);
+    setLoading(false);
   }
 
-  function handleGetRecipes() {
-    if(diet !== "All") {
-      fetch(`${baseUrl}/recipes?diet_type=${diet}`)
-        .then(response => response.text())
-        .then(data => {
-          console.log("Recipes:", data);
-          setText(data);
-        })
-        .catch(error => {
-          console.error("Error fetching recipes:", error);
-          alert("Error fetching recipes (see console for details)");
-        });
-    }
-    else {
-      fetch(`${baseUrl}/recipes?diet_type=${search}`)
-        .then(response => response.text())
-        .then(data => {
-          console.log("Recipes:", data);
-          setText(data);
-        })
-        .catch(error => {
-          console.error("Error fetching recipes:", error);
-          alert("Error fetching recipes (see console for details)");
-        });
-    }
+  async function handleGetInsights() {
+    const res = await fetch(`${baseUrl}/nutritional-insights?diet_type=${getQuery()}`);
+    const data = await res.json();
+    setInsights(data);
+    setResults([]);
+    setClusters([]);
   }
 
-  function handleGetClusters() {
-    if(diet !== "All") {
-      fetch(`${baseUrl}/clusters?diet_type=${diet}`)
-        .then(response => response.text())
-        .then(data => {
-          console.log("Clusters:", data);
-          setText(data);
-        })
-        .catch(error => {
-          console.error("Error fetching clusters:", error);
-          alert("Error fetching clusters (see console for details)");
-        });
-    }
-    else {
-      fetch(`${baseUrl}/clusters?diet_type=${search}`)
-        .then(response => response.text())
-        .then(data => {
-          console.log("Clusters:", data);
-          setText(data);
-        })
-        .catch(error => {
-          console.error("Error fetching clusters:", error);
-          alert("Error fetching clusters (see console for details)");
-        });
-    }
+  async function handleGetClusters() {
+    const res = await fetch(`${baseUrl}/clusters?diet_type=${getQuery()}`);
+    const data = await res.json();
+    setClusters(data);
+    setResults([]);
+    setInsights(null);
   }
 
   return (
@@ -187,31 +91,61 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             <div className="bg-white p-6 shadow-lg rounded-lg flex flex-col gap-4">
               <h3 className="font-semibold">Bar Chart</h3>
-              <p className="text-sm text-gray-600">Average macronutrient content by diet type.</p>
-              <div className="w-full h-56 mt-2 bg-gray-50 rounded flex items-center justify-center">
-                <canvas id="barChart" ref={barRef} className="w-full h-full" />
+              <div className="w-full h-56 mt-2 bg-gray-50 rounded flex items-center justify-center overflow-hidden">
+                {barImage ? (
+                  <img
+                    src={`data:image/png;base64,${barImage}`}
+                    className="w-full h-full object-contain"
+                    alt="Bar Chart"
+                  />
+                ) : (
+                  <p className="text-gray-400">Loading...</p>
+                )}
               </div>
             </div>
 
             <div className="bg-white p-6 shadow-lg rounded-lg flex flex-col gap-4">
               <h3 className="font-semibold">Scatter Plot</h3>
-              <p className="text-sm text-gray-600">Nutrient relationships (e.g., protein vs carbs).</p>
-              <div className="w-full h-56 mt-2 bg-gray-50 rounded flex items-center justify-center">
-                <canvas id="scatterPlot" ref={scatterRef} className="w-full h-full" />
+              <div className="w-full h-56 mt-2 bg-gray-50 rounded flex items-center justify-center overflow-hidden">
+                {scatterImage ? (
+                  <img
+                    src={`data:image/png;base64,${scatterImage}`}
+                    className="w-full h-full object-contain"
+                    alt="Scatter Plot"
+                  />
+                ) : (
+                  <p className="text-gray-400">Loading...</p>
+                )}
               </div>
             </div>
 
             <div className="bg-white p-6 shadow-lg rounded-lg flex flex-col gap-4">
-              <h3 className="font-semibold">Heatmap</h3>
-              <p className="text-sm text-gray-600">Nutrient correlations.</p>
-              <div id="heatmap" className="w-full h-56 mt-2 bg-gray-50 rounded flex items-center justify-center" />
+              <h3 className="font-semibold">Heat Map</h3>
+              <div className="w-full h-56 mt-2 bg-gray-50 rounded flex items-center justify-center overflow-hidden">
+                {heatmapImage ? (
+                  <img
+                    src={`data:image/png;base64,${heatmapImage}`}
+                    className="w-full h-full object-contain"
+                    alt="Heat Map"
+                  />
+                ) : (
+                  <p className="text-gray-400">Loading...</p>
+                )}
+              </div>
             </div>
 
             <div className="bg-white p-6 shadow-lg rounded-lg flex flex-col gap-4">
               <h3 className="font-semibold">Pie Chart</h3>
-              <p className="text-sm text-gray-600">Recipe distribution by diet type.</p>
-              <div className="w-full h-56 mt-2 bg-gray-50 rounded flex items-center justify-center">
-                <canvas id="pieChart" ref={pieRef} className="w-full h-full" />
+              <div className="w-full h-56 mt-2 bg-gray-50 rounded flex items-center justify-center overflow-hidden">
+                {pieImage ? (
+                  <img
+                    src={`data:image/png;base64,${pieImage}`}
+                    className="w-full h-full object-contain"
+                    alt="Pie Chart"
+                  />
+                ) : (
+                  <p className="text-gray-400">Loading...</p>
+                )}
               </div>
             </div>
           </div>
@@ -233,29 +167,125 @@ export default function Home() {
               className="p-3 border border-gray-300 rounded-md w-full sm:w-auto focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="All">All Diet Types</option>
-              <option value="vegan">Vegan</option>
+              <option value="dash">Dash</option>
               <option value="keto">Keto</option>
+              <option value="mediterranean">Mediterranean</option>
+              <option value="paleo">Paleo</option>
+              <option value="vegan">Vegan</option>
             </select>
           </div>
         </section>
 
         <section className="mb-8">
           <h2 className="text-2xl font-semibold mb-4">API Data Interaction</h2>
-          <div className="flex flex-wrap gap-4">
-            <button onClick={handleGetInsights} className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-5 rounded-lg font-medium transition-colors">Get Nutritional Insights</button>
-            <button onClick={handleGetRecipes} className="bg-green-600 hover:bg-green-700 text-white py-2 px-5 rounded-lg font-medium transition-colors">Get Recipes</button>
-            <button onClick={handleGetClusters} className="bg-purple-600 hover:bg-purple-700 text-white py-2 px-5 rounded-lg font-medium transition-colors">Get Clusters</button>
+          <div className="flex flex-wrap gap-4 mb-6">
+            <button
+              onClick={handleGetInsights}
+              className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-5 rounded-lg font-medium transition-colors"
+            >
+              Get Nutritional Insights
+            </button>
+            <button
+              onClick={handleGetRecipes}
+              className="bg-green-600 hover:bg-green-700 text-white py-2 px-5 rounded-lg font-medium transition-colors"
+            >
+              Get Recipes
+            </button>
+            <button
+              onClick={handleGetClusters}
+              className="bg-purple-600 hover:bg-purple-700 text-white py-2 px-5 rounded-lg font-medium transition-colors"
+            >
+              Get Clusters
+            </button>
           </div>
-          {text}
-        </section>
 
-        <section>
-          <h2 className="text-2xl font-semibold mb-4">Pagination</h2>
-          <div className="flex justify-center gap-3 mt-4">
-            <button className="px-4 py-2 bg-white border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 transition">Previous</button>
-            <button className="px-4 py-2 bg-blue-600 text-white rounded-lg font-bold">1</button>
-            <button className="px-4 py-2 bg-white border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 transition">2</button>
-            <button className="px-4 py-2 bg-white border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 transition">Next</button>
+          <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-200 min-h-[200px]">
+            {loading && <p className="animate-pulse text-blue-500">Loading data from backend...</p>}
+
+            {/* INSIGHTS VIEW */}
+            {insights && !loading && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="p-4 bg-blue-50 border-l-4 border-blue-500 rounded">
+                  <h4 className="text-xs font-bold text-blue-600 uppercase">Avg Protein</h4>
+                  <p className="text-2xl font-black">{insights.average_protein?.toFixed(1)}g</p>
+                </div>
+                <div className="p-4 bg-green-50 border-l-4 border-green-500 rounded">
+                  <h4 className="text-xs font-bold text-green-600 uppercase">Avg Carbs</h4>
+                  <p className="text-2xl font-black">{insights.average_carbs?.toFixed(1)}g</p>
+                </div>
+                <div className="p-4 bg-red-50 border-l-4 border-red-500 rounded">
+                  <h4 className="text-xs font-bold text-red-600 uppercase">Avg Fat</h4>
+                  <p className="text-2xl font-black">{insights.average_fat?.toFixed(1)}g</p>
+                </div>
+              </div>
+            )}
+
+            {/* RECIPES VIEW - WITH PAGINATION */}
+            {results.length > 0 && !loading && (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="border-b text-gray-400 text-xs uppercase font-bold">
+                      <th className="pb-3">Recipe Name</th>
+                      <th className="pb-3">Cuisine</th>
+                      <th className="pb-3 text-right">Protein(g)</th>
+                      <th className="pb-3 text-right">Carbs(g)</th>
+                      <th className="pb-3 text-right">Fat(g)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {results.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((r, i) => (
+                      <tr key={i} className="border-b last:border-0 hover:bg-gray-50">
+                        <td className="py-3 pr-2 font-medium">{r.Recipe_name}</td>
+                        <td className="py-3 italic text-gray-600">{r.Cuisine_type}</td>
+                        <td className="py-3 text-right font-mono text-blue-600 font-bold">{r["Protein(g)"]}</td>
+                        <td className="py-3 text-right font-mono text-green-600 font-bold">{r["Carbs(g)"]}</td>
+                        <td className="py-3 text-right font-mono text-red-600 font-bold">{r["Fat(g)"]}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+
+                {/* PAGINATION */}
+                <div className="flex justify-center gap-4 mt-6 items-center">
+                  <button
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage((p) => p - 1)}
+                    className="px-4 py-2 border rounded-lg disabled:opacity-30 hover:bg-gray-100"
+                  >
+                    Previous
+                  </button>
+                  <span className="font-bold text-blue-600">Page {currentPage}</span>
+                  <button
+                    disabled={currentPage * itemsPerPage >= results.length}
+                    onClick={() => setCurrentPage((p) => p + 1)}
+                    className="px-4 py-2 border rounded-lg disabled:opacity-30 hover:bg-gray-100"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* CLUSTERS VIEW */}
+            {clusters.length > 0 && !loading && (
+              <div>
+                <h4 className="text-sm font-bold text-purple-600 mb-4 uppercase">Nutrient Cluster Points (Raw Data)</h4>
+                <div className="flex flex-wrap gap-2 max-h-60 overflow-y-auto p-2 bg-gray-50 rounded">
+                  {clusters.slice(0, 50).map((c, i) => (
+                    <span
+                      key={i}
+                      className="px-2 py-1 bg-white border border-purple-200 rounded text-[10px] font-mono shadow-sm"
+                    >
+                      P:{c["Protein(g)"]} | C:{c["Carbs(g)"]} | F:{c["Fat(g)"]}
+                    </span>
+                  ))}
+                  {clusters.length > 50 && (
+                    <p className="text-xs text-gray-400">...and {clusters.length - 50} more points.</p>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </section>
       </main>
