@@ -30,10 +30,10 @@ export default function Home() {
     async function fetchAllCharts() {
       try {
         const [bar, scatter, heatmap, pie] = await Promise.all([
-          fetch(`${baseUrl}/bar-chart-data`).then(res => res.text()),
-          fetch(`${baseUrl}/scatter-plot-data`).then(res => res.text()),
-          fetch(`${baseUrl}/heatmap-data`).then(res => res.text()),
-          fetch(`${baseUrl}/pie-chart-data`).then(res => res.text()),
+          fetch(`${baseUrl}/bar-chart-data`).then((res) => res.text()),
+          fetch(`${baseUrl}/scatter-plot-data`).then((res) => res.text()),
+          fetch(`${baseUrl}/heatmap-data`).then((res) => res.text()),
+          fetch(`${baseUrl}/pie-chart-data`).then((res) => res.text()),
         ]);
 
         setBarImage(bar);
@@ -76,6 +76,16 @@ export default function Home() {
     setResults([]);
     setInsights(null);
   }
+
+  useEffect(() => {
+    const activeDiet = diet !== "All" ? diet : search;
+
+    if (activeDiet && activeDiet.length > 2) {
+      if (results.length > 0) handleGetRecipes();
+      if (insights) handleGetInsights();
+      if (clusters.length > 0) handleGetClusters();
+    }
+  }, [diet, search]);
 
   return (
     <div className="min-h-screen bg-gray-100 font-sans text-gray-900">
@@ -178,6 +188,7 @@ export default function Home() {
 
         <section className="mb-8">
           <h2 className="text-2xl font-semibold mb-4">API Data Interaction</h2>
+          
           <div className="flex flex-wrap gap-4 mb-6">
             <button
               onClick={handleGetInsights}
@@ -291,7 +302,7 @@ export default function Home() {
       </main>
 
       <footer className="bg-blue-600 p-6 text-white text-center mt-10">
-        <p>&copy; 2025 Nutritional Insights. All Rights Reserved.</p>
+        <p>&copy; 2026 Nutritional Insights. All Rights Reserved.</p>
       </footer>
     </div>
   );
