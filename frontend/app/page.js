@@ -2,6 +2,10 @@
 
 import { useState, useEffect } from "react";
 
+import SecuritySection from "./sections/SecurityCompliance";
+import OAuthSection from "./sections/OAuth";
+import CloudResourceSection from "./sections/CloudResource";
+
 export default function Home() {
   // Filters
   const [search, setSearch] = useState("");
@@ -299,6 +303,18 @@ export default function Home() {
             )}
           </div>
         </section>
+
+
+        <div className="flex flex-col gap-10">
+          {/* Security And Compliance */}
+          <SecuritySection />
+          {/* Authentication */}
+          <OAuthSection />
+          {/* Cloud Resource Group */}
+          <CloudResourceSection />
+        </div>
+
+
       </main>
 
       <footer className="bg-blue-600 p-6 text-white text-center mt-10">

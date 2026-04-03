@@ -44,5 +44,31 @@ def clusters():
     diet_type = request.args.get('diet_type', 'All')  # Get diet type from query parameters, default to 'All'
     return get_clusters_by_diet(diet_type=diet_type)
 
+
+# Get Security Variables
+@app.route('/security-status')
+def security_status():
+    # Add Logic
+
+
+
+    # Replace With Real Values
+    encryptVal = ""
+    accessVal = ""
+    complianceVal = ""
+    
+    return {
+        "encryption": encryptVal, 
+        "access_control": accessVal,
+        "compliance": complianceVal
+    }
+
+
+# Clean Up Resources
+@app.route('/cleanup', methods=['POST'])
+def cleanup():
+    pass
+
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
