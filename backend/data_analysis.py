@@ -5,19 +5,24 @@ from io import BytesIO
 import base64
 
 from azure.storage.blob import BlobServiceClient
-from dotenv import load_dotenv
-import os
-
-load_dotenv()  # Load environment variables from .env file
+from azure.identity import DefaultAzureCredential
+from azure.keyvault.secrets import SecretClient
 
 # Create list of columns to load
 read_cols = ['Diet_type', 'Recipe_name', 'Cuisine_type', 'Protein(g)', 'Carbs(g)', 'Fat(g)']
 
-# Azure Blob Storage connection details
-CONNECTION_STRING = os.getenv('AZURE_STORAGE_CONNECTION_STRING')
+# Fetch connection string from Azure Key Vault using Managed Identity
+credential = DefaultAzureCredential()
+secret_client = SecretClient(
+    vault_url="https://ProjectNutritionKeyVault.vault.azure.net/",
+    credential=credential
+)
+CONNECTION_STRING = secret_client.get_secret("StorageConnectionString").value
+
+# Azure Blob Storage setup
 blob_service_client = BlobServiceClient.from_connection_string(CONNECTION_STRING, api_version="2023-11-03")
 container_name = 'datasets'
-blob_name='All_Diets.csv'
+blob_name = 'All_Diets.csv'
 container_client = blob_service_client.get_container_client(container_name)
 blob_client = container_client.get_blob_client(blob_name)
 
