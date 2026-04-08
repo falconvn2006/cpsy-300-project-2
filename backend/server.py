@@ -10,10 +10,10 @@ from data_analysis import (bar_chart_figure, scatter_plot_figure,
 app = Flask(__name__)
 CORS(app)
 
-# --- Auth config (fill these in once Hayden sets up OAuth) ---
-B2C_TENANT = "YOUR_B2C_TENANT_NAME"
-FLOW = "B2C_1_signupsignin"
-CLIENT_ID = "YOUR_B2C_CLIENT_ID"
+# --- Firebase Auth config ---
+# Firebase public keys URL for verifying tokens
+FIREBASE_PROJECT_ID = "YOUR_FIREBASE_PROJECT_ID"  # Ask Hayden for this
+FIREBASE_JWKS_URL = "https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com"
 
 def get_token_from_header():
     auth = request.headers.get("Authorization", "")
@@ -28,9 +28,14 @@ def verify_token(f):
         if not token:
             return jsonify({"error": "Missing token"}), 401
         try:
-            jwks_url = f"https://{B2C_TENANT}.b2clogin.com/{B2C_TENANT}.onmicrosoft.com/{FLOW}/discovery/v2.0/keys"
-            jwks = httpx.get(jwks_url).json()
-            jwt.decode(token, jwks, algorithms=["RS256"], audience=CLIENT_ID)
+            jwks = httpx.get(FIREBASE_JWKS_URL).json()
+            jwt.decode(
+                token,
+                jwks,
+                algorithms=["RS256"],
+                audience=FIREBASE_PROJECT_ID,
+                issuer=f"https://securetoken.google.com/{FIREBASE_PROJECT_ID}"
+            )
         except JWTError:
             return jsonify({"error": "Invalid token"}), 401
         return f(*args, **kwargs)
@@ -61,7 +66,7 @@ def pie_chart_data():
     # return f'<img src="data:image/png;base64,{pie_chart_figure()}" alt="Pie Chart">'
     return pie_chart_figure()
 
-# Data routes are protected — require login
+# Data routes are protected — require Firebase login
 @app.route('/nutritional-insights')
 @verify_token
 def nutritional_insights():
