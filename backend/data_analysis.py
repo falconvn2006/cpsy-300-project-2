@@ -157,6 +157,14 @@ def pie_chart_figure():
 
 def get_nutritional_insights(diet_type):
     diet_type = diet_type.lower()
+
+    if diet_type == 'all':
+        return {
+            'average_protein': avg_macros['Protein(g)'].mean(),
+            'average_carbs': avg_macros['Carbs(g)'].mean(),
+            'average_fat': avg_macros['Fat(g)'].mean()
+        }
+
     insights = {}
 
     if diet_type in avg_macros.index.str.lower():
@@ -174,6 +182,10 @@ def get_nutritional_insights(diet_type):
 def get_recipes(diet_type):
     diet_type = diet_type.lower()
 
+    if diet_type == 'all':
+        recipes = df[['Recipe_name', 'Cuisine_type', 'Protein(g)', 'Carbs(g)', 'Fat(g)']]
+        return recipes.to_dict(orient='records')
+
     if diet_type in df['Diet_type'].unique():
         recipes = df[df['Diet_type'] == diet_type][
             ['Recipe_name', 'Cuisine_type', 'Protein(g)', 'Carbs(g)', 'Fat(g)']
@@ -185,6 +197,9 @@ def get_recipes(diet_type):
 
 def get_clusters_by_diet(diet_type):
     diet_type = diet_type.lower()
+
+    if diet_type == 'all':
+        return df[nutrients].to_dict(orient='records')
 
     if diet_type in df['Diet_type'].unique():
         return df[df['Diet_type'] == diet_type][nutrients].to_dict(orient='records')
