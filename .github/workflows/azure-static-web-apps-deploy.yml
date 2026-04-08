@@ -30,3 +30,7 @@ jobs:
           output_location: ".next"  # Next.js default build output
         env:
           NEXT_PUBLIC_BACKEND_URL: https://nutrition-backend-server.jollymoss-3ced5ef6.eastasia.azurecontainerapps.io
+          NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
+          NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.FIREBASE_AUTH_DOMAIN }}
+          NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID }}
