@@ -3,18 +3,21 @@ import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 from io import BytesIO
 import base64
-from dotenv import load_dotenv
-import os
 
 from azure.storage.blob import BlobServiceClient
-
-load_dotenv()
+from azure.identity import DefaultAzureCredential
+from azure.keyvault.secrets import SecretClient
 
 # Create list of columns to load
 read_cols = ['Diet_type', 'Recipe_name', 'Cuisine_type', 'Protein(g)', 'Carbs(g)', 'Fat(g)']
 
-# Get connection string from .env
-CONNECTION_STRING = os.getenv('AZURE_STORAGE_CONNECTION_STRING')
+# Fetch connection string from Azure Key Vault using Managed Identity
+credential = DefaultAzureCredential()
+secret_client = SecretClient(
+    vault_url="https://ProjectNutritionKeyVault.vault.azure.net/",
+    credential=credential
+)
+CONNECTION_STRING = secret_client.get_secret("StorageConnectionString").value
 
 # Azure Blob Storage setup
 blob_service_client = BlobServiceClient.from_connection_string(CONNECTION_STRING, api_version="2023-11-03")
