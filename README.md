@@ -1,6 +1,6 @@
-# CPSY-300 Project Part 2
+# CPSY-300 Project Part 3
 
-## Testing Setup (For Now)
+## Testing Setup
 
 ### Run Backend:
 
@@ -9,15 +9,17 @@
 3. `python -m venv .venv`
 4. `source .venv/bin/activate`
 5. `pip install -r requirements.txt`
-6. `python server.py`
-7. Copy Server Address
+6. Create a `.env file` in backend
+7. Copy from `.env.sample` and paste the values in the appropriate variables
+8. `python server.py`
+9. Copy Server Address
 
 ### Run Frontend:
 
-8. Go to `frontend/.env.local`
-9. Paste `NEXT_PUBLIC_BACKEND_URL=[Server Address]`
-10. Open New Terminal
-11. `cd frontend`
-12. `npm install`
-13. `npm run build` 
-14. `npm run dev`
+10. Go to `create a .env file in frontend`
+11. Copy from `.env.sample` and paste the values in the appropriate variables
+12. Open New Terminal
+13. `cd frontend`
+14. `npm install`
+15. `npm run build` 
+16. `npm run dev`
