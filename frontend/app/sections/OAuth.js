@@ -7,14 +7,22 @@ export default function OAuthSection() {
     const [user, setUser] = useState(null);
     const [twoFACode, setTwoFACode] = useState(0);
 
-    const handleLogin = async (provider) => {
-        try {
-            const result = await signInWithPopup(auth, provider);
-            setUser(result.user);
-        } catch (err) {
+const [loading, setLoading] = useState(false);
+
+const handleLogin = async (provider) => {
+    if (loading) return;
+
+    setLoading(true);
+    try {
+        const result = await signInWithPopup(auth, provider);
+        setUser(result.user);
+    } catch (err) {
+        if (err.code !== "auth/cancelled-popup-request") {
             console.error("Login failed:", err);
         }
-    };
+    }
+    setLoading(false);
+};
 
     const handleLogout = async () => {
         await signOut(auth);

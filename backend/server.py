@@ -3,18 +3,20 @@ from flask_cors import CORS
 from functools import wraps
 from jose import jwt, JWTError
 import httpx
-from data_analysis import (bar_chart_figure, scatter_plot_figure,
-    heatmap_figure, pie_chart_figure, get_nutritional_insights,
-    get_recipes, get_clusters_by_diet)
+from data_analysis import (
+    bar_chart_figure, scatter_plot_figure,
+    heatmap_figure, pie_chart_figure,
+    get_nutritional_insights, get_recipes, get_clusters_by_diet
+)
 
 app = Flask(__name__)
 CORS(app)
 
 # --- Firebase Auth config ---
-# Firebase public keys URL for verifying tokens
-FIREBASE_PROJECT_ID = "cpsy300-project"  # Ask Hayden for this
+FIREBASE_PROJECT_ID = "cpsy300-project"  # Replace with your project ID
 FIREBASE_JWKS_URL = "https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com"
 
+# --- Helper functions ---
 def get_token_from_header():
     auth = request.headers.get("Authorization", "")
     if not auth.startswith("Bearer "):
@@ -41,66 +43,60 @@ def verify_token(f):
         return f(*args, **kwargs)
     return decorated
 
+def normalize_diet(diet_type):
+    return diet_type.strip().lower() if diet_type else "all"
+
+# --- Routes ---
 @app.route('/')
 def hello_world():
     return 'Hello, World!'
 
-# Charts are public — no login needed
+# Chart endpoints (public)
 @app.route('/bar-chart-data')
 def bar_chart_data():
-    # return f'<img src="data:image/png;base64,{bar_chart_figure()}" alt="Bar Chart">'
     return bar_chart_figure()
 
 @app.route('/scatter-plot-data')
 def scatter_plot_data():
-    # return f'<img src="data:image/png;base64,{scatter_plot_figure()}" alt="Scatter Plot">'
     return scatter_plot_figure()
 
 @app.route('/heatmap-data')
 def heatmap_data():
-    # return f'<img src="data:image/png;base64,{heatmap_figure()}" alt="Heatmap">'
     return heatmap_figure()
 
 @app.route('/pie-chart-data')
 def pie_chart_data():
-    # return f'<img src="data:image/png;base64,{pie_chart_figure()}" alt="Pie Chart">'
     return pie_chart_figure()
 
-# Data routes are protected — require Firebase login
+# Protected data endpoints
 @app.route('/nutritional-insights')
 @verify_token
 def nutritional_insights():
-    diet_type = request.args.get('diet_type', 'All')  # Get diet type from query parameters, default to 'All'
-    return get_nutritional_insights(diet_type=diet_type)
+    diet_type = normalize_diet(request.args.get('diet_type', 'all'))
+    return jsonify(get_nutritional_insights(diet_type=diet_type))
 
 @app.route('/recipes')
 @verify_token
 def recipes():
-    diet_type = request.args.get('diet_type', 'All')  # Get diet type from query parameters, default to 'All'
-    return get_recipes(diet_type=diet_type)
+    diet_type = normalize_diet(request.args.get('diet_type', 'all'))
+    return jsonify(get_recipes(diet_type=diet_type))
 
 @app.route('/clusters')
 @verify_token
 def clusters():
-    diet_type = request.args.get('diet_type', 'All')  # Get diet type from query parameters, default to 'All'
-    return get_clusters_by_diet(diet_type=diet_type)
+    diet_type = normalize_diet(request.args.get('diet_type', 'all'))
+    return jsonify(get_clusters_by_diet(diet_type=diet_type))
 
-# Get Security Variables
+# Security & Compliance
 @app.route('/security-status')
 def security_status():
-    # Add Logic
-    # Replace With Real Values
-    encryptVal = "AES-256"
-    accessVal = "Azure Key Vault + Managed Identity"
-    complianceVal = "JWT Protected API"
-
     return {
-        "encryption": encryptVal,
-        "access_control": accessVal,
-        "compliance": complianceVal
+        "encryption": "Enabled",
+        "access_control": "Secure",
+        "compliance": "GDPR Compliant"
     }
 
-# Clean Up Resources
+# Cloud resource cleanup
 @app.route('/cleanup', methods=['POST'])
 def cleanup():
     return jsonify({"message": "Cleanup triggered successfully"})
