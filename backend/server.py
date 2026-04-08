@@ -12,7 +12,7 @@ CORS(app)
 
 # --- Firebase Auth config ---
 # Firebase public keys URL for verifying tokens
-FIREBASE_PROJECT_ID = "YOUR_FIREBASE_PROJECT_ID"  # Ask Hayden for this
+FIREBASE_PROJECT_ID = "cpsy300-project"  # Ask Hayden for this
 FIREBASE_JWKS_URL = "https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com"
 
 def get_token_from_header():
