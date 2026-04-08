@@ -1,37 +1,34 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { auth } from "./firebase";
 
 import SecuritySection from "./sections/SecurityCompliance";
 import OAuthSection from "./sections/OAuth";
 import CloudResourceSection from "./sections/CloudResource";
 
 export default function Home() {
-  // Filters
   const [search, setSearch] = useState("");
   const [diet, setDiet] = useState("All");
 
-  // Data results
   const [results, setResults] = useState([]);
   const [insights, setInsights] = useState(null);
   const [clusters, setClusters] = useState([]);
 
-  // Chart
   const [barImage, setBarImage] = useState(null);
   const [scatterImage, setScatterImage] = useState(null);
   const [heatmapImage, setHeatmapImage] = useState(null);
   const [pieImage, setPieImage] = useState(null);
-  const [loading, setLoading] = useState(false);
 
-  // Pagination
+  const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
   const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
-  //  Fetch all charts data
+  // Fetch chart images
   useEffect(() => {
-    async function fetchAllCharts() {
+    async function fetchCharts() {
       try {
         const [bar, scatter, heatmap, pie] = await Promise.all([
           fetch(`${baseUrl}/bar-chart-data`).then((res) => res.text()),
@@ -45,51 +42,54 @@ export default function Home() {
         setHeatmapImage(heatmap);
         setPieImage(pie);
       } catch (err) {
-        console.error("Charts failed to load:", err);
+        console.error("Chart load failed:", err);
       }
     }
-    fetchAllCharts();
+    fetchCharts();
   }, [baseUrl]);
 
-  const getQuery = () => (diet !== "All" ? diet : search);
+  const getQuery = () =>
+    diet !== "All" ? diet.toLowerCase() : search.toLowerCase();
 
-  // Get recipes, insights, or clusters based on user interaction
-  async function handleGetRecipes() {
-    setLoading(true);
-    const res = await fetch(`${baseUrl}/recipes?diet_type=${getQuery()}`);
-    const data = await res.json();
-    setResults(data);
-    setInsights(null);
-    setClusters([]);
-    setCurrentPage(1);
-    setLoading(false);
-  }
-
-  async function handleGetInsights() {
-    const res = await fetch(`${baseUrl}/nutritional-insights?diet_type=${getQuery()}`);
-    const data = await res.json();
-    setInsights(data);
-    setResults([]);
-    setClusters([]);
-  }
-
-  async function handleGetClusters() {
-    const res = await fetch(`${baseUrl}/clusters?diet_type=${getQuery()}`);
-    const data = await res.json();
-    setClusters(data);
-    setResults([]);
-    setInsights(null);
-  }
-
-  useEffect(() => {
-    const activeDiet = diet !== "All" ? diet : search;
-
-    if (activeDiet && activeDiet.length > 2) {
-      if (results.length > 0) handleGetRecipes();
-      if (insights) handleGetInsights();
-      if (clusters.length > 0) handleGetClusters();
+  async function getAuthHeader() {
+    const user = auth.currentUser;
+    if (!user) {
+      alert("Please log in first");
+      throw new Error("User not logged in");
     }
-  }, [diet, search]);
+    const token = await user.getIdToken();
+    return { Authorization: `Bearer ${token}` };
+  }
+
+  const fetchData = async (endpoint, setterResults, setterInsights, setterClusters) => {
+    try {
+      setLoading(true);
+      const headers = await getAuthHeader();
+      const res = await fetch(`${baseUrl}/${endpoint}?diet_type=${getQuery()}`, { headers });
+      const data = await res.json();
+
+      setterResults([]);
+      setterInsights(null);
+      setterClusters([]);
+      if (endpoint === "recipes") setterResults(data);
+      if (endpoint === "nutritional-insights") setterInsights(data);
+      if (endpoint === "clusters") setterClusters(data);
+      setCurrentPage(1);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGetRecipes = () =>
+    fetchData("recipes", setResults, setInsights, setClusters);
+  const handleGetInsights = () =>
+    fetchData("nutritional-insights", setResults, setInsights, setClusters);
+  const handleGetClusters = () =>
+    fetchData("clusters", setResults, setInsights, setClusters);
+
+  const maxPage = Math.ceil(results.length / itemsPerPage);
 
   return (
     <div className="min-h-screen bg-gray-100 font-sans text-gray-900">
@@ -100,85 +100,33 @@ export default function Home() {
       </header>
 
       <main className="container mx-auto p-6">
+
+        {/* Charts */}
         <section className="mb-8">
           <h2 className="text-2xl font-semibold mb-4">Explore Nutritional Insights</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <div className="bg-white p-6 shadow-lg rounded-lg flex flex-col gap-4">
-              <h3 className="font-semibold">Bar Chart</h3>
-              <div className="w-full h-56 mt-2 bg-gray-50 rounded flex items-center justify-center overflow-hidden">
-                {barImage ? (
-                  <img
-                    src={`data:image/png;base64,${barImage}`}
-                    className="w-full h-full object-contain"
-                    alt="Bar Chart"
-                  />
-                ) : (
-                  <p className="text-gray-400">Loading...</p>
-                )}
-              </div>
-            </div>
-
-            <div className="bg-white p-6 shadow-lg rounded-lg flex flex-col gap-4">
-              <h3 className="font-semibold">Scatter Plot</h3>
-              <div className="w-full h-56 mt-2 bg-gray-50 rounded flex items-center justify-center overflow-hidden">
-                {scatterImage ? (
-                  <img
-                    src={`data:image/png;base64,${scatterImage}`}
-                    className="w-full h-full object-contain"
-                    alt="Scatter Plot"
-                  />
-                ) : (
-                  <p className="text-gray-400">Loading...</p>
-                )}
-              </div>
-            </div>
-
-            <div className="bg-white p-6 shadow-lg rounded-lg flex flex-col gap-4">
-              <h3 className="font-semibold">Heat Map</h3>
-              <div className="w-full h-56 mt-2 bg-gray-50 rounded flex items-center justify-center overflow-hidden">
-                {heatmapImage ? (
-                  <img
-                    src={`data:image/png;base64,${heatmapImage}`}
-                    className="w-full h-full object-contain"
-                    alt="Heat Map"
-                  />
-                ) : (
-                  <p className="text-gray-400">Loading...</p>
-                )}
-              </div>
-            </div>
-
-            <div className="bg-white p-6 shadow-lg rounded-lg flex flex-col gap-4">
-              <h3 className="font-semibold">Pie Chart</h3>
-              <div className="w-full h-56 mt-2 bg-gray-50 rounded flex items-center justify-center overflow-hidden">
-                {pieImage ? (
-                  <img
-                    src={`data:image/png;base64,${pieImage}`}
-                    className="w-full h-full object-contain"
-                    alt="Pie Chart"
-                  />
-                ) : (
-                  <p className="text-gray-400">Loading...</p>
-                )}
-              </div>
-            </div>
+            <ChartCard title="Bar Chart" image={barImage} />
+            <ChartCard title="Scatter Plot" image={scatterImage} />
+            <ChartCard title="Heat Map" image={heatmapImage} />
+            <ChartCard title="Pie Chart" image={pieImage} />
           </div>
         </section>
 
+        {/* Filters */}
         <section className="mb-8">
           <h2 className="text-2xl font-semibold mb-4">Filters and Data Interaction</h2>
-          <div className="flex flex-wrap gap-4 items-center">
+          <div className="flex flex-wrap gap-4">
             <input
               type="text"
               placeholder="Search by Diet Type"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="p-3 border border-gray-300 rounded-md w-full sm:w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="p-2 border rounded w-full sm:w-auto"
             />
             <select
               value={diet}
               onChange={(e) => setDiet(e.target.value)}
-              className="p-3 border border-gray-300 rounded-md w-full sm:w-auto focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="p-2 border rounded w-full sm:w-auto"
             >
               <option value="All">All Diet Types</option>
               <option value="dash">Dash</option>
@@ -190,25 +138,41 @@ export default function Home() {
           </div>
         </section>
 
+        {/* API Data Interaction - Redesigned */}
         <section className="mb-8">
           <h2 className="text-2xl font-semibold mb-4">API Data Interaction</h2>
           
           <div className="flex flex-wrap gap-4 mb-6">
             <button
               onClick={handleGetInsights}
-              className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-5 rounded-lg font-medium transition-colors"
+              disabled={loading}
+              className={`py-2 px-5 rounded-lg font-medium transition-colors ${
+                loading 
+                  ? "bg-blue-400 cursor-not-allowed" 
+                  : "bg-blue-600 hover:bg-blue-700 text-white"
+              }`}
             >
               Get Nutritional Insights
             </button>
             <button
               onClick={handleGetRecipes}
-              className="bg-green-600 hover:bg-green-700 text-white py-2 px-5 rounded-lg font-medium transition-colors"
+              disabled={loading}
+              className={`py-2 px-5 rounded-lg font-medium transition-colors ${
+                loading 
+                  ? "bg-green-400 cursor-not-allowed" 
+                  : "bg-green-600 hover:bg-green-700 text-white"
+              }`}
             >
               Get Recipes
             </button>
             <button
               onClick={handleGetClusters}
-              className="bg-purple-600 hover:bg-purple-700 text-white py-2 px-5 rounded-lg font-medium transition-colors"
+              disabled={loading}
+              className={`py-2 px-5 rounded-lg font-medium transition-colors ${
+                loading 
+                  ? "bg-purple-400 cursor-not-allowed" 
+                  : "bg-purple-600 hover:bg-purple-700 text-white"
+              }`}
             >
               Get Clusters
             </button>
@@ -217,7 +181,7 @@ export default function Home() {
           <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-200 min-h-[200px]">
             {loading && <p className="animate-pulse text-blue-500">Loading data from backend...</p>}
 
-            {/* INSIGHTS VIEW */}
+            {/* INSIGHTS VIEW - Three Card Layout */}
             {insights && !loading && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="p-4 bg-blue-50 border-l-4 border-blue-500 rounded">
@@ -235,7 +199,7 @@ export default function Home() {
               </div>
             )}
 
-            {/* RECIPES VIEW - WITH PAGINATION */}
+            {/* RECIPES VIEW - With Table and Pagination */}
             {results.length > 0 && !loading && (
               <div className="overflow-x-auto">
                 <table className="w-full text-left">
@@ -256,29 +220,31 @@ export default function Home() {
                         <td className="py-3 text-right font-mono text-blue-600 font-bold">{r["Protein(g)"]}</td>
                         <td className="py-3 text-right font-mono text-green-600 font-bold">{r["Carbs(g)"]}</td>
                         <td className="py-3 text-right font-mono text-red-600 font-bold">{r["Fat(g)"]}</td>
-                      </tr>
+                       </tr>
                     ))}
                   </tbody>
                 </table>
 
                 {/* PAGINATION */}
-                <div className="flex justify-center gap-4 mt-6 items-center">
-                  <button
-                    disabled={currentPage === 1}
-                    onClick={() => setCurrentPage((p) => p - 1)}
-                    className="px-4 py-2 border rounded-lg disabled:opacity-30 hover:bg-gray-100"
-                  >
-                    Previous
-                  </button>
-                  <span className="font-bold text-blue-600">Page {currentPage}</span>
-                  <button
-                    disabled={currentPage * itemsPerPage >= results.length}
-                    onClick={() => setCurrentPage((p) => p + 1)}
-                    className="px-4 py-2 border rounded-lg disabled:opacity-30 hover:bg-gray-100"
-                  >
-                    Next
-                  </button>
-                </div>
+                {maxPage > 1 && (
+                  <div className="flex justify-center gap-4 mt-6 items-center">
+                    <button
+                      disabled={currentPage === 1}
+                      onClick={() => setCurrentPage((p) => p - 1)}
+                      className="px-4 py-2 border rounded-lg disabled:opacity-30 hover:bg-gray-100"
+                    >
+                      Previous
+                    </button>
+                    <span className="font-bold text-blue-600">Page {currentPage}</span>
+                    <button
+                      disabled={currentPage * itemsPerPage >= results.length}
+                      onClick={() => setCurrentPage((p) => p + 1)}
+                      className="px-4 py-2 border rounded-lg disabled:opacity-30 hover:bg-gray-100"
+                    >
+                      Next
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 
@@ -301,25 +267,43 @@ export default function Home() {
                 </div>
               </div>
             )}
+
+            {/* Empty State */}
+            {!loading && insights === null && results.length === 0 && clusters.length === 0 && (
+              <div className="text-center py-8 text-gray-400">
+                <p>Click any button above to fetch data</p>
+              </div>
+            )}
           </div>
         </section>
 
-
+        {/* Other Sections */}
         <div className="flex flex-col gap-10">
-          {/* Security And Compliance */}
           <SecuritySection />
-          {/* Authentication */}
           <OAuthSection />
-          {/* Cloud Resource Group */}
           <CloudResourceSection />
         </div>
-
-
       </main>
 
-      <footer className="bg-blue-600 p-6 text-white text-center mt-10">
+      <footer className="bg-blue-600 p-4 text-white text-center mt-10">
         <p>&copy; 2026 Nutritional Insights. All Rights Reserved.</p>
       </footer>
+    </div>
+  );
+}
+
+// Chart Card Component
+function ChartCard({ title, image }) {
+  return (
+    <div className="bg-white p-4 shadow-lg rounded-lg">
+      <h3 className="font-semibold">{title}</h3>
+      <div className="w-full h-48 flex items-center justify-center">
+        {image ? (
+          <img src={`data:image/png;base64,${image}`} alt={title} className="object-contain h-full w-full" />
+        ) : (
+          <p>Loading...</p>
+        )}
+      </div>
     </div>
   );
 }
